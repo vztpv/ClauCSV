@@ -312,20 +312,6 @@ namespace wiz {
 							token_arr_count++;
 						}
 						break;
-					case ' ':
-					case '\t':
-					case '\r':
-					case '\v':
-					case '\f':
-						token_last = i - 1;
-						if (token_last - token_first + 1 > 0) {
-							token_arr[num + token_arr_count] = Get(token_first + num, token_last - token_first + 1, text[token_first], option);
-							token_arr_count++;
-						}
-						token_first = i + 1;
-						token_last = i + 1;
-
-						break;
 					}
 
 				}
@@ -358,7 +344,7 @@ namespace wiz {
 					start[i] = length / thr_num * i;
 
 					for (long long x = start[i]; x <= length; ++x) {
-						if (isWhitespace(text[x]) || '\0' == text[x] ||
+						if ('\n' == text[x] || '\0' == text[x] ||
 							option.Delimiter == text[x]) {
 							start[i] = x;
 							break;
@@ -368,7 +354,7 @@ namespace wiz {
 				for (int i = 0; i < thr_num - 1; ++i) {
 					last[i] = start[i + 1];
 					for (long long x = last[i]; x <= length; ++x) {
-						if (isWhitespace(text[x]) || '\0' == text[x] ||
+						if ('\n' == text[x] || '\0' == text[x] ||
 							option.Delimiter == text[x]) {
 							last[i] = x;
 							break;
@@ -403,9 +389,8 @@ namespace wiz {
 					const long long len = GetLength(tokens[i]);
 					const char ch = text[GetIdx(tokens[i])];
 					const long long idx = GetIdx(tokens[i]);
-					const bool isToken2 = IsToken2(tokens[i]);
 
-					if (isToken2) {
+					{
 						if (0 == state && '\"' == ch) {
 							state = 1;
 							qouted_start = i;
@@ -426,23 +411,23 @@ namespace wiz {
 
 								{
 									long long idx = GetIdx(tokens[qouted_start]);
-									long long len = GetLength(tokens[qouted_start]);
 
-									len = GetIdx(tokens[inner_qouted_start]) - idx + 1;
+									long long len = GetIdx(tokens[inner_qouted_start]) - idx + 1;
 
 									tokens[real_token_arr_count] = Get(idx, len, text[idx], option);
 									real_token_arr_count++;
-
-									--j;
 								}
+
+								--j;
+								continue;
 							}
 						}
-						else if (3== state && ('\n' == ch || '\0' == ch)) { 
+						else if (3 == state && ('\n' == ch || '\0' == ch)) { 
 							state = 0;
 						}
 					}
 					
-					if (0 == state) { // , \n, \0
+					if (0 == state) { 
 						tokens[real_token_arr_count] = tokens[i];
 						real_token_arr_count++;
 					}
@@ -533,7 +518,7 @@ namespace wiz {
 						}
 					}
 					else if (1 == state) {
-						if (i < length && '\"' == ch) {
+						if ('\"' == ch) {
 							state = 2;
 						}
 					}

@@ -8,7 +8,7 @@
 
 int main(void)
 {
-	char buffer_text[] = "abc,\"\"\"d\"\"\",e,f\r\nx,y,z,w\r\n,,,\r\n";
+	char buffer_text[] = "abc,\"\"\"d\"\"\"ab,e,f\r\nx,y,z,w\r\n,,,\r\n";
 
 	wiz::InFileReserver reserver(buffer_text, strlen(buffer_text));
 
@@ -19,7 +19,7 @@ int main(void)
 	long long token_arr_len;
 
 
-	reserver(wiz::LoadDataOption(), 2, buffer, &buffer_len, token_arr, &token_arr_len);
+	reserver(wiz::LoadDataOption(), 3, buffer, &buffer_len, token_arr, &token_arr_len);
 
 
 	for (int i = 0; i < token_arr_len; ++i) {
