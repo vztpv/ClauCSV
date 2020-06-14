@@ -6,6 +6,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <set>
 
 
 namespace wiz {
@@ -67,6 +68,9 @@ namespace wiz {
 		const char Delimiter = ',';
 		const char Line = '\n';
 		const char Eod = '\0'; // End of data.
+		const int DelimiterType = 1;
+		const int LineType = 2;
+		const int EodType = 3;
 	};
 
 	inline bool isWhitespace(const char ch)
@@ -94,9 +98,9 @@ namespace wiz {
 		return -1;
 	}
 
-	class InFileReserver
+	class Utility
 	{
-	private:
+	public:
 		class BomInfo
 		{
 		public:
@@ -177,6 +181,11 @@ namespace wiz {
 
 		// todo - rename.
 		static long long Get(long long position, long long length, char ch, const wiz::LoadDataOption& option) {
+			
+			if (length < 0) {
+				length = 0;
+			}
+
 			long long x = (position << 32) + (length << 3) + 0;
 
 			if (length != 1) {
@@ -190,7 +199,7 @@ namespace wiz {
 				x += 4; // 0100
 			}
 			else if (option.Eod == ch) {
-				x += 8; // 1000
+				x += 6; // 0110
 			}
 			return x;
 		}
@@ -213,8 +222,11 @@ namespace wiz {
 		static void PrintToken(const char* buffer, long long token) {
 			std::cout << std::string(buffer + GetIdx(token), GetLength(token));
 		}
+	};
+	class Scanner
+	{
 	private:
-		static void _Scanning(char* text, long long num, const long long length,
+		static void _Scanning(const char* text, long long num, const long long length,
 			long long*& token_arr, long long& _token_arr_size, const LoadDataOption& option) {
 
 			long long token_arr_size = 0;
@@ -235,7 +247,7 @@ namespace wiz {
 					case '\"':
 						token_last = i - 1;
 						if (token_last - token_first + 1 > 0) {
-							token_arr[num + token_arr_count] = Get(token_first + num, token_last - token_first + 1, text[token_first], option);
+							token_arr[num + token_arr_count] = Utility::Get(token_first + num, token_last - token_first + 1, text[token_first], option);
 							token_arr_count++;
 						}
 
@@ -247,14 +259,23 @@ namespace wiz {
 
 						{//
 							token_arr[num + token_arr_count] = 1;
-							token_arr[num + token_arr_count] += Get(i + num, 1, ch, option);
+							token_arr[num + token_arr_count] += Utility::Get(i + num, 1, ch, option);
 							token_arr_count++;
 						}
 						break;
-					case '\n':
-						token_last = i - 1;
+					case '\r':
+						token_last = i - 1; // i - 1?
 						if (token_last - token_first + 1 > 0) {
-							token_arr[num + token_arr_count] = Get(token_first + num, token_last - token_first + 1, text[token_first], option);
+							token_arr[num + token_arr_count] = Utility::Get(token_first + num, token_last - token_first + 1, text[token_first], option);
+							token_arr_count++;
+						}
+						token_first = i + 1;
+						token_last = i + 1;
+						break;
+					case '\n':
+						token_last = i - 1; // i - 1?
+						if (token_last - token_first + 1 > 0) {
+							token_arr[num + token_arr_count] = Utility::Get(token_first + num, token_last - token_first + 1, text[token_first], option);
 							token_arr_count++;
 						}
 						token_first = i + 1;
@@ -262,14 +283,14 @@ namespace wiz {
 
 						{//
 							token_arr[num + token_arr_count] = 1;
-							token_arr[num + token_arr_count] += Get(i + num, 1, ch, option);
+							token_arr[num + token_arr_count] += Utility::Get(i + num, 1, ch, option);
 							token_arr_count++;
 						}
 						break;
 					case '\0':
 						token_last = i - 1;
 						if (token_last - token_first + 1 > 0) {
-							token_arr[num + token_arr_count] = Get(token_first + num, token_last - token_first + 1, text[token_first], option);
+							token_arr[num + token_arr_count] = Utility::Get(token_first + num, token_last - token_first + 1, text[token_first], option);
 							token_arr_count++;
 						}
 						token_first = i + 1;
@@ -277,14 +298,14 @@ namespace wiz {
 
 						{//
 							token_arr[num + token_arr_count] = 1;
-							token_arr[num + token_arr_count] += Get(i + num, 1, ch, option);
+							token_arr[num + token_arr_count] += Utility::Get(i + num, 1, ch, option);
 							token_arr_count++;
 						}
 						break;
 					case '#':
 						token_last = i - 1;
 						if (token_last - token_first + 1 > 0) {
-							token_arr[num + token_arr_count] = Get(token_first + num, token_last - token_first + 1, text[token_first], option);
+							token_arr[num + token_arr_count] = Utility::Get(token_first + num, token_last - token_first + 1, text[token_first], option);
 							token_arr_count++;
 						}
 						token_first = i + 1;
@@ -292,7 +313,7 @@ namespace wiz {
 
 						{//
 							token_arr[num + token_arr_count] = 1;
-							token_arr[num + token_arr_count] += Get(i + num, 1, ch, option);
+							token_arr[num + token_arr_count] += Utility::Get(i + num, 1, ch, option);
 							token_arr_count++;
 						}
 
@@ -300,7 +321,7 @@ namespace wiz {
 					case ',':
 						token_last = i - 1;
 						if (token_last - token_first + 1 > 0) {
-							token_arr[num + token_arr_count] = Get(token_first + num, token_last - token_first + 1, text[token_first], option);
+							token_arr[num + token_arr_count] = Utility::Get(token_first + num, token_last - token_first + 1, text[token_first], option);
 							token_arr_count++;
 						}
 						token_first = i + 1;
@@ -308,7 +329,7 @@ namespace wiz {
 
 						{//
 							token_arr[num + token_arr_count] = 1;
-							token_arr[num + token_arr_count] += Get(i + num, 1, ch, option);
+							token_arr[num + token_arr_count] += Utility::Get(i + num, 1, ch, option);
 							token_arr_count++;
 						}
 						break;
@@ -317,7 +338,7 @@ namespace wiz {
 				}
 
 				if (length - 1 - token_first + 1 > 0) {
-					token_arr[num + token_arr_count] = Get(token_first + num, length - 1 - token_first + 1, text[token_first], option);
+					token_arr[num + token_arr_count] = Utility::Get(token_first + num, length - 1 - token_first + 1, text[token_first], option);
 					token_arr_count++;
 				}
 				token_arr_size = token_arr_count;
@@ -330,7 +351,7 @@ namespace wiz {
 
 
 
-		static void ScanningNew(char* text, const long long length, const int thr_num,
+		static void ScanningNew(const char* text, const long long length, const int thr_num,
 			long long*& _token_arr, long long& _token_arr_size, const LoadDataOption& option)
 		{
 			std::vector<std::thread> thr(thr_num);
@@ -386,9 +407,9 @@ namespace wiz {
 				for (long long j = 0; j < token_arr_size[t]; ++j) {
 					const long long i = start[t] + j;
 
-					const long long len = GetLength(tokens[i]);
-					const char ch = text[GetIdx(tokens[i])];
-					const long long idx = GetIdx(tokens[i]);
+					const long long len = Utility::GetLength(tokens[i]);
+					const char ch = text[Utility::GetIdx(tokens[i])];
+					const long long idx = Utility::GetIdx(tokens[i]);
 
 					{
 						if (0 == state && '\"' == ch) {
@@ -403,18 +424,18 @@ namespace wiz {
 							inner_qouted_start = i;
 						}
 						else if (2 == state) {
-							if ('\"' == ch && GetIdx(tokens[inner_qouted_start]) + 1 == GetIdx(tokens[i])) {
+							if ('\"' == ch && Utility::GetIdx(tokens[inner_qouted_start]) + 1 == Utility::GetIdx(tokens[i])) {
 								state = 1;
 							}
 							else {
 								state = 0;
 
 								{
-									long long idx = GetIdx(tokens[qouted_start]);
+									long long idx = Utility::GetIdx(tokens[qouted_start]);
 
-									long long len = GetIdx(tokens[inner_qouted_start]) - idx + 1;
+									long long len = Utility::GetIdx(tokens[inner_qouted_start]) - idx + 1;
 
-									tokens[real_token_arr_count] = Get(idx, len, text[idx], option);
+									tokens[real_token_arr_count] = Utility::Get(idx, len, text[idx], option);
 									real_token_arr_count++;
 								}
 
@@ -448,7 +469,7 @@ namespace wiz {
 		}
 
 
-		static void Scanning(char* text, const long long length,
+		static void Scanning(const char* text, const long long length,
 			long long*& _token_arr, long long& _token_arr_size, const LoadDataOption& option) {
 
 			long long* token_arr = new long long[length + 1];
@@ -470,7 +491,7 @@ namespace wiz {
 						if (option.LineComment == ch) {
 							token_last = i - 1;
 							if (token_last - token_first + 1 > 0) {
-								token_arr[token_arr_count] = Get(token_first, token_last - token_first + 1, text[token_first], option);
+								token_arr[token_arr_count] = Utility::Get(token_first, token_last - token_first + 1, text[token_first], option);
 								token_arr_count++;
 							}
 
@@ -479,7 +500,7 @@ namespace wiz {
 						else if ('\"' == ch) {
 							token_last = i - 1;
 							if (token_last - token_first + 1 > 0) {
-								token_arr[token_arr_count] = Get(token_first, token_last - token_first + 1, text[token_first], option);
+								token_arr[token_arr_count] = Utility::Get(token_first, token_last - token_first + 1, text[token_first], option);
 								token_arr_count++;
 							}
 
@@ -488,29 +509,51 @@ namespace wiz {
 
 							state = 1;
 						}
-						else if ('\n' == ch || '\0' == ch) {
-							token_last = i - 2; // i - 1? text\r\n
+						else if ('\r' == ch) {
+							token_last = i - 1; // i - 1? text\r\n
 							if (token_last - token_first + 1 > 0) {
-								token_arr[token_arr_count] = Get(token_first, token_last - token_first + 1, text[token_first], option);
+								token_arr[token_arr_count] = Utility::Get(token_first, token_last - token_first + 1, text[token_first], option);
 								token_arr_count++;
 							}
 							token_first = i + 1;
 							token_last = i + 1;
 
-							token_arr[token_arr_count] = Get(i, 1, ch, option);
+						}
+						else if ('\n' == ch) {
+							token_last = i - 1; // i - 1? text\r\n
+							if (token_last - token_first + 1 > 0) {
+								token_arr[token_arr_count] = Utility::Get(token_first, token_last - token_first + 1, text[token_first], option);
+								token_arr_count++;
+							}
+							token_first = i + 1;
+							token_last = i + 1;
+
+							token_arr[token_arr_count] = Utility::Get(i, 1, ch, option);
+							token_arr_count++;
+						}
+						else if ('\0' == ch) {
+							token_last = i - 1; // i - 1? text\r\n
+							if (token_last - token_first + 1 > 0) {
+								token_arr[token_arr_count] = Utility::Get(token_first, token_last - token_first + 1, text[token_first], option);
+								token_arr_count++;
+							}
+							token_first = i + 1;
+							token_last = i + 1;
+
+							token_arr[token_arr_count] = Utility::Get(i, 1, ch, option);
 							token_arr_count++;
 						}
 						else if (option.Delimiter == ch) {
 							token_last = i - 1;
 							if (token_last - token_first + 1 > 0) {
-								token_arr[token_arr_count] = Get(token_first, token_last - token_first + 1, text[token_first], option);
+								token_arr[token_arr_count] = Utility::Get(token_first, token_last - token_first + 1, text[token_first], option);
 								token_arr_count++;
 							}
 
 							token_first = i;
 							token_last = i;
 
-							token_arr[token_arr_count] = Get(token_first, token_last - token_first + 1, text[token_first], option);
+							token_arr[token_arr_count] = Utility::Get(token_first, token_last - token_first + 1, text[token_first], option);
 							token_arr_count++;
 
 							token_first = i + 1;
@@ -529,13 +572,15 @@ namespace wiz {
 						else {
 							token_last = i - 1;
 
-							token_arr[token_arr_count] = Get(token_first, token_last - token_first + 1, text[token_first], option);
+							token_arr[token_arr_count] = Utility::Get(token_first, token_last - token_first + 1, text[token_first], option);
 							token_arr_count++;
 
 							token_first = i;
 							token_last = i;
 
 							state = 0;
+							--i;
+
 						}
 					}
 					else if (3 == state) {
@@ -545,7 +590,7 @@ namespace wiz {
 							token_first = i + 1;
 							token_last = i + 1;
 
-							token_arr[token_arr_count] = Get(i, 1, ch, option);
+							token_arr[token_arr_count] = Utility::Get(i, 1, ch, option);
 							token_arr_count++;
 						}
 					}
@@ -565,8 +610,8 @@ namespace wiz {
 		}
 
 
-		static std::pair<bool, int> Scan(FILE* inFile, char* buf, long long buf_size, const int num, const wiz::LoadDataOption& option, int thr_num,
-			char*& _buffer, long long* _buffer_len, long long*& _token_arr, long long* _token_arr_len)
+		static std::pair<bool, int> Scan(FILE* inFile, const char* buf, long long buf_size, const int num, const wiz::LoadDataOption& option, int thr_num,
+			const char*& _buffer, long long* _buffer_len, long long*& _token_arr, long long* _token_arr_len)
 		{
 			if (inFile == nullptr && buf == nullptr) {
 				return { false, 0 };
@@ -576,7 +621,7 @@ namespace wiz {
 			long long arr_count_size = 0;
 
 			std::string temp;
-			char* buffer = nullptr;
+			const char* buffer = nullptr;
 			long long file_length;
 
 			{
@@ -585,10 +630,10 @@ namespace wiz {
 					unsigned long long length = ftell(inFile);
 					fseek(inFile, 0, SEEK_SET);
 
-					BomType x = ReadBom(inFile);
+					Utility::BomType x = Utility::ReadBom(inFile);
 
 					//	wiz::Out << "length " << length << "\n";
-					if (x == BomType::UTF_8) {
+					if (x == Utility::BomType::UTF_8) {
 						length = length - 3;
 					}
 
@@ -597,11 +642,11 @@ namespace wiz {
 
 					//int a = clock();
 					// read data as a block:
-					fread(buffer, sizeof(char), file_length, inFile);
+					fread(const_cast<char*>(buffer), sizeof(char), file_length, inFile);
 					//int b = clock();
 					//std::cout << b - a << " " << file_length <<"\n";
 
-					buffer[file_length] = '\0';
+					const_cast<char*>(buffer)[file_length] = '\0';
 				}
 				else {
 					buffer = buf;
@@ -634,23 +679,23 @@ namespace wiz {
 
 	private:
 		FILE* pInFile = nullptr;
-		char* buf = nullptr;
+		const char* buf = nullptr;
 		long long buf_size = 0;
 	public:
 		int Num = 0;
 	public:
-		explicit InFileReserver(FILE* inFile)
+		explicit Scanner(FILE* inFile)
 		{
 			pInFile = inFile;
 			Num = 1;
 		}
 
-		explicit InFileReserver(char* buffer, long long size) {
+		explicit Scanner(const char* buffer, long long size) {
 			buf = buffer;
 			buf_size = size;
 		}
 	public:
-		bool operator() (const wiz::LoadDataOption& option, int thr_num, char*& buffer, long long* buffer_len, long long*& token_arr, long long* token_arr_len)
+		bool operator() (const wiz::LoadDataOption& option, int thr_num, const char*& buffer, long long* buffer_len, long long*& token_arr, long long* token_arr_len)
 		{
 			bool x = Scan(pInFile, buf, buf_size, Num, option, thr_num, buffer, buffer_len, token_arr, token_arr_len).second > 0;
 
@@ -659,6 +704,384 @@ namespace wiz {
 	};
 
 
+	template <class T>
+	class Node {
+	public:
+		std::vector<T> element;
+
+
+		Node<T>() {
+			//
+		}
+
+		Node<T>(const Node<T>& other) {
+			element = other.element;
+		}
+		Node<T>(Node<T>&& other) {
+			element = std::move(other.element);
+		}
+
+		void operator=(const Node<T>& other) {
+			element = other.element;
+		}
+		void operator=(const Node<T>&& other) {
+			element = std::move(other.element);
+		}
+
+		size_t Size() const {
+			return element.size();
+		}
+
+		bool Empty() const {
+			return element.empty();
+		}
+	};
+
+	template <class T>
+	class Tree {
+	private:
+		std::vector<Node<T>> data;
+		std::vector<T> header;
+	
+	public:
+		// access data.
+			// useHeader?
+			// useIdx?
+
+
+		Node<T>& GetData(size_t idx) {
+			return data[idx];
+		}
+
+		const Node<T>& GetData(size_t idx) const {
+			return data[idx];
+		}
+		void Change() { // warnning.
+			for (size_t i = 0; i < data[0].element.size(); ++i) {
+				header.push_back(data[0].element[i]);
+			}
+			data.clear();
+		}
+
+		void PushBack(const T& str) {
+			data.back().element.push_back(str);
+		}
+		void PushBack(const char* str, const long long start, const long long len) {
+			data.back().element.emplace_back(str + start, len);
+		}
+
+		void NewLine() {
+			data.push_back(Node<T>());
+		}
+		// initHeader.
+		// etc...
+		size_t Size() const {
+			return data.size();
+		}
+
+		void Reserve(size_t sz) {
+			data.reserve(sz);
+		}
+
+		Node<T>&& GetMovedData(size_t idx) {
+			return std::move(data[idx]);
+		}
+		
+		void AddData(Node<T>&& node) {
+			if (!this->data.empty() && this->data.back().Empty()) {
+				this->data.back().element = std::move(node.element);
+			}
+			else {
+				this->data.push_back(std::move(node));
+			}
+		}
+	};
+
+	template <class T>
+	class Parser {
+	private:
+		static void Merge(Tree<T>* tree, Tree<T>* element) {
+			for (size_t i = 0; i < element->Size(); ++i) {
+				tree->AddData(element->GetMovedData(i));
+			}
+		}
+
+		static void _Parse(const char* text, long long num, long long* token_arr, long long token_arr_size, int start_state, int last_state, wiz::LoadDataOption option, Tree<T>* output) {
+			int state = start_state;
+
+			long long idx = Utility::GetIdx(token_arr[0]);
+
+			std::vector<long long> vec;
+
+			output->NewLine();
+
+			for (long long i = 0; i < token_arr_size; ++i) {
+				if (option.DelimiterType == Utility::GetType(token_arr[i])) {
+				
+					const long long diff = Utility::GetIdx(token_arr[i]) - idx;
+
+					if (diff >= 0) {
+						if (diff > 0) {
+							vec.push_back(Utility::Get(idx, diff, ' ', option));
+						}
+						else {
+							vec.push_back(0);
+						}
+					}
+
+					idx = Utility::GetIdx(token_arr[i + 1]);
+				}
+				else if (option.LineType == Utility::GetType(token_arr[i])) {
+					const long long diff = Utility::GetIdx(token_arr[i]) - 1 - idx;
+
+					if (diff >= 0) {
+						if (diff > 0) {
+							vec.push_back(Utility::Get(idx, diff, ' ', option));
+						}
+						else {
+							vec.push_back(0);
+						}
+					}
+
+					output->Reserve(vec.size());
+
+					for (size_t i = 0; i < vec.size(); ++i) {
+						output->PushBack(text, Utility::GetIdx(vec[i]), Utility::GetLength(vec[i]));
+					}
+					vec.clear();
+
+					idx = Utility::GetIdx(token_arr[i + 1]);
+					output->NewLine();
+				}
+				else if (option.EodType == Utility::GetType(token_arr[i])) {
+					const long long diff = Utility::GetIdx(token_arr[i]) - idx;
+
+					if (diff >= 0) {
+						if (diff > 0) {
+							output->PushBack(std::string(text + idx, diff));
+						}
+						else {
+							output->PushBack(std::string());
+						}
+					}
+				}
+			}
+
+			// processing errors.
+
+			if (state != last_state) {
+				std::cout << "error in _Parser\n";
+			}
+		}
+
+		static long long FindDivisionPlace(const char* buffer, const long long* token_arr, long long start, long long last, const wiz::LoadDataOption& option)
+		{
+			for (long long a = last; a >= start; --a) {
+				long long len = Utility::GetLength(token_arr[a]);
+				long long val = Utility::GetType(token_arr[a]);
+
+				if (option.LineType == val) {
+					return a;
+				}
+			}
+			return -1;
+		}
+
+		static Tree<T> Parse(wiz::Scanner& scanner, const char* text, long long* token_arr, long long token_arr_len, int numOfParse, wiz::LoadDataOption option, bool useHeader = false) {
+			Tree<T> global;
+			const int pivot_num = numOfParse - 1;
+
+			// Headaer chk..
+			if (useHeader) {
+				size_t idx = 0;
+				for (; idx < token_arr_len; ++idx) {
+					if (Utility::GetType(token_arr[idx]) == option.LineType || Utility::GetType(token_arr[idx]) == option.EodType) {
+						break;
+					}
+				}
+				_Parse(text, 0, token_arr, idx, 0, 0, option, &global);
+
+				global.Change(); //
+
+				token_arr = token_arr + idx;
+				token_arr_len = token_arr_len - idx;
+			}
+
+			// Data Division.. with \n Token.
+			std::set<long long> _pivots;
+			std::vector<long long> pivots;
+			const long long num = token_arr_len; //
+
+			if (pivot_num > 0) {
+				std::vector<long long> pivot;
+				pivots.reserve(pivot_num);
+				pivot.reserve(pivot_num);
+
+				for (int i = 0; i < pivot_num; ++i) {
+					pivot.push_back(FindDivisionPlace(text, token_arr, (num / (pivot_num + 1)) * (i), (num / (pivot_num + 1)) * (i + 1) - 1, option));
+				}
+
+				for (int i = 0; i < pivot.size(); ++i) {
+					if (pivot[i] != -1) {
+						_pivots.insert(pivot[i]);
+					}
+				}
+
+				for (auto& x : _pivots) {
+					pivots.push_back(x);
+				}
+			}
+
+
+			// Do Parallel..
+			{
+
+				std::vector<Tree<T>> __global(pivots.size() + 1);
+
+				std::vector<std::thread> thr(pivots.size() + 1);
+
+				{
+					long long idx = pivots.empty() ? num - 1 : pivots[0];
+					long long _token_arr_len = idx - 0 + 1;
+
+					thr[0] = std::thread(_Parse, text, 0, token_arr, _token_arr_len, 0, 0, option, &__global[0]);
+				}
+
+				for (int i = 1; i < pivots.size(); ++i) {
+					long long _token_arr_len = pivots[i] - (pivots[i - 1] + 1) + 1;
+
+					thr[i] = std::thread(_Parse, text, pivots[i - 1] + 1, token_arr + pivots[i - 1] + 1, _token_arr_len, 0, 0, option, &__global[i]);
+
+				}
+
+				if (pivots.size() >= 1) {
+					long long _token_arr_len = num - 1 - (pivots.back() + 1) + 1;
+
+					thr[pivots.size()] = std::thread(_Parse, text, pivots.back() + 1, token_arr + pivots.back() + 1, _token_arr_len, 0, 0, option, &__global[pivots.size()]);
+				}
+
+				// wait
+				for (int i = 0; i < thr.size(); ++i) {
+					thr[i].join();
+				}
+
+				long long sum_size = 0;
+				for (int i = 0; i < thr.size(); ++i) {
+					sum_size += __global[i].Size();
+				}
+
+				global.Reserve(sum_size);
+
+
+				for (int i = 0; i < thr.size(); ++i) {
+					Merge(&global, &__global[i]);
+				}
+			}
+
+			return global;
+		}
+	public:
+		static Tree<T> ParseFromFile(const std::string& fileName, bool useHeader = false, int numOfScan = 0, int numOfParse = 0) {
+			if (numOfScan <= 0) {
+				numOfScan = std::thread::hardware_concurrency();
+			}
+			if (numOfScan <= 0) {
+				numOfScan = 1;
+			}
+
+			if (numOfParse <= 0) {
+				numOfParse = std::thread::hardware_concurrency();
+			}
+			if (numOfParse <= 0) {
+				numOfParse = 1;
+			}
+
+
+			const char* buffer = nullptr;
+			long long buffer_len = 0;
+			long long* token_arr = nullptr;
+			long long token_arr_len = 0;
+
+			{
+				FILE* inFile = fopen(fileName.c_str(), "rb");
+				if (!inFile || ferror(inFile)) {
+					std::cout << "file open error in parser\n";
+					return Tree<T>();
+				}
+				Scanner scanner(inFile);
+				if (!scanner(wiz::LoadDataOption(), numOfScan, buffer, &buffer_len, token_arr, &token_arr_len)) {
+					fclose(inFile);
+					std::cout << "scanner error in parser\n";
+					return Tree<T>();
+				}
+				fclose(inFile);
+
+				if (token_arr_len <= 0) {
+					if (buffer) {
+						delete[] buffer;
+					}
+					if (token_arr) {
+						delete[] token_arr;
+					}
+					return Tree<T>();
+				}
+
+				auto ret = Parse(scanner, buffer, token_arr, token_arr_len, numOfParse, wiz::LoadDataOption(), useHeader);
+
+				if (token_arr) {
+					delete[] token_arr;
+				}
+				if (buffer) {
+					delete[] buffer;
+				}
+
+				return ret;
+			}
+		}
+		static Tree<T> ParseFromString(const std::string& str, bool useHeader = false, int numOfScan = 0, int numOfParse = 0) {
+			if (numOfScan <= 0) {
+				numOfScan = std::thread::hardware_concurrency();
+			}
+			if (numOfScan <= 0) {
+				numOfScan = 1;
+			}
+
+			if (numOfParse <= 0) {
+				numOfParse = std::thread::hardware_concurrency();
+			}
+			if (numOfParse <= 0) {
+				numOfParse = 1;
+			}
+
+			const char* buffer = nullptr;
+			long long buffer_len = 0;
+			long long* token_arr = nullptr;
+			long long token_arr_len = 0;
+
+			{
+				Scanner scanner(str.c_str(), str.size());
+				if (!scanner(wiz::LoadDataOption(), numOfScan, buffer, &buffer_len, token_arr, &token_arr_len)) {
+					std::cout << "fail to scanning in parser\n";
+					return Tree<T>();
+				}
+
+				if (token_arr_len <= 0) {
+					if (token_arr) {
+						delete[] token_arr;
+					}
+					return Tree<T>();
+				}
+
+				Tree<T> ret = Parse(scanner, buffer, token_arr, token_arr_len, numOfParse, wiz::LoadDataOption(), useHeader);
+
+				if (token_arr) {
+					delete[] token_arr;
+				}
+
+				return ret;
+			}
+		}
+	};
 }
 
 #endif
