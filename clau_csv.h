@@ -780,6 +780,10 @@ namespace wiz {
 		}
 
 		void Reserve(size_t sz) {
+			data.back().element.reserve(sz);
+		}
+
+		void Reserve2(size_t sz) {
 			data.reserve(sz);
 		}
 
@@ -815,7 +819,14 @@ namespace wiz {
 
 			output->NewLine();
 
+			bool is_first = true;
+			long long count = 0;
+
 			for (long long i = 0; i < token_arr_size; ++i) {
+				if (is_first) {
+					count++;
+				}
+				
 				if (option.DelimiterType == Utility::GetType(token_arr[i])) {
 				
 					const long long diff = Utility::GetIdx(token_arr[i]) - idx;
@@ -832,6 +843,13 @@ namespace wiz {
 					idx = Utility::GetIdx(token_arr[i + 1]);
 				}
 				else if (option.LineType == Utility::GetType(token_arr[i])) {
+					if (is_first) {
+						if (count > 0) {
+							output->Reserve2(token_arr_size / count);
+						}
+						is_first = false;
+					}
+
 					const long long diff = Utility::GetIdx(token_arr[i]) - 1 - idx;
 
 					if (diff >= 0) {
@@ -891,7 +909,7 @@ namespace wiz {
 			Tree<T> global;
 			const int pivot_num = numOfParse - 1;
 
-			// Headaer chk..
+			// Header chk..
 			if (useHeader) {
 				size_t idx = 0;
 				for (; idx < token_arr_len; ++idx) {
@@ -970,7 +988,7 @@ namespace wiz {
 					sum_size += __global[i].Size();
 				}
 
-				global.Reserve(sum_size);
+				global.Reserve2(sum_size);
 
 
 				for (int i = 0; i < thr.size(); ++i) {
