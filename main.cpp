@@ -17,7 +17,7 @@ int main(void)
 		for (int j = 0; j < 5; ++j) {
 
 			int a = clock();
-			rapidcsv::Document doc("test.csv");
+			rapidcsv::Document doc("test.csv"); // comment
 
 			int b = clock();
 			std::cout << b - a << "ms\n";
